@@ -22,4 +22,21 @@ explore-dime.ipynb
 Exploration of the distribution of DIME scores for 2012 and 2014
 
 
-SamePartyTest.ipynb   Testing the correlation between the DIME scores and election results for elections in which both general election candidates are of the same party
+SamePartyTest.ipynb
+
+Testing the correlation between the DIME scores and election results for elections in which both general election candidates are of the same party
+
+
+extract-sameparty.pl
+
+Perl code that extracted races from the spreadsheets from the California Secretary of State's websites where both candidates in the general election were from the same party and the vote totals in the general and primary.
+
+
+extract-dime.pl
+
+Perl code that extracted DIME data for each candidate
+
+
+merge-vote-dime.pl
+
+Perl code that merged the DIME scores from the output of extract-dime.pl with the vote data in the output from extract-sameparty.pl
