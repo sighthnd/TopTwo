@@ -67,6 +67,8 @@ foreach my $dir (2012, 2014, 2016) {
 			    push @cands, $cname;
 			}
 			my $str;
+			my $opp = 'N';
+			my $oth = $party =~ /DEM/ ? "REP" : "DEM";
 			# Record the vote totals for each candidate
 			while (!$str) {
 			    $r++;
@@ -88,20 +90,26 @@ foreach my $dir (2012, 2014, 2016) {
 			# Get the primary vote totals for the candidates
 			# that advanced
 			my ($candr, $voter, @pvotes);
+			# Identify the first row of candidates
 			$candr = $prir + 2;
+			# Identify where the data for that row end
+			# This is at the row that starts "District Totals"
 			$voter = $candr + 2;
 			while ($shpri->get_cell($voter, 0)->value !~
-			       /^District /) {
+			       /^District/) {
 			    $voter++;
 			}
-			while (!$pvotes[0] or !$pvotes[1]) {
+		      DIST:
+			while (!$pvotes[0] or !$pvotes[1] or $opp eq 'N') {
 			    for (my $c = 1; $shpri->get_cell($candr, $c);
 				 $c++) {
 				# Exclude candidates not of the party
 				# in the general
-				next unless
-				    ($shpri->get_cell($candr+1, $c)->value =~
-				     /^$party/);
+				my $pstr = $shpri->get_cell($candr+1, $c)->
+				    value;
+				$opp = 'Y' if ($pstr =~ /^$oth/ and
+					       $pstr !~ m%W/I%);
+				next unless ($pstr =~ /^$party/);
 				# Get the candidate name
 				my $cname = $shpri->get_cell($candr,$c)->value;
 				$cname =~ s/^\s*//;
@@ -115,19 +123,33 @@ foreach my $dir (2012, 2014, 2016) {
 				    $pvotes[$ind] =
 					$shpri->get_cell($voter, $c)->value;
 				}
-				last if ($pvotes[0] and $pvotes[1]);
+				last if ($pvotes[0] and $pvotes[1] and
+					 $opp eq 'Y');
 			    }
 			    # Check that both candidates were found
 			    # If not, check the next row of candidates
-			    if (!$pvotes[0] or !$pvotes[1]) {
+			    if (!$pvotes[0] or !$pvotes[1] or $opp eq 'N') {
 				$candr = $voter + 2;
-				while (!$shpri->get_cell($candr, 1)) {
+				while (!$shpri->get_cell($candr, 1) or
+				       $shpri->get_cell($candr, 1)->value !~
+				       /\S/) {
+				    if ($candr - $voter > 15 or
+					($shpri->get_cell($candr, 0) and
+					 $shpri->get_cell($candr, 0)->value =~
+					 /District/)) {
+					last DIST;
+				    }
 				    $candr++;
 				}
 				$voter = $candr + 2;
+				while ($shpri->get_cell($voter, 0) and
+				       $shpri->get_cell($voter, 0)->value !~
+				       /^District/) {
+				    $voter++;
+				}
 			    }
 			}
-			print OUT "$pvotes[0];$pvotes[1]\n";
+			print OUT "$pvotes[0];$pvotes[1];$opp\n";
 		    }
 		}
 	    } else {
